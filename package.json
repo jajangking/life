@@ -10,7 +10,8 @@
     "test": "playwright test",
     "start": "node scripts/serve.mjs",
     "test:server": "node --test tests/server.test.mjs",
-    "test:deploy": "bash tests/vps.test.sh"
+    "test:deploy": "bash tests/vps.test.sh",
+    "test:simulation": "node --test tests/simulation.test.mjs"
   },
   "dependencies": {
     "@fontsource/dm-sans": "^5.3.0",

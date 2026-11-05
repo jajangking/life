@@ -108,32 +108,65 @@ export function createKit(root) {
   return { root, mesh, box, cyl, ball, rod, slab, ring, sign };
 }
 
-/** Thousands of little details, but only one draw call per static material. */
-export function batchStatic(root) {
+// Opaque painted primitives share a vertex-colour material. Animated windows,
+// lights and textured signs retain their original material references.
+const vertexMaterials = new Map();
+function bakedMaterial(mat) {
+  if (!mat.isMeshStandardMaterial || mat.map || mat.transparent || mat.emissive.getHex() || mat.userData.keepColor) return mat;
+  const options = { roughness: mat.roughness, metalness: mat.metalness, side: mat.side, flatShading: mat.flatShading, toneMapped: mat.toneMapped, depthWrite: mat.depthWrite };
+  const key = JSON.stringify(options);
+  if (!vertexMaterials.has(key)) vertexMaterials.set(key, new THREE.MeshStandardMaterial({ ...options, color: '#ffffff', vertexColors: true }));
+  return vertexMaterials.get(key);
+}
+
+/** Spatial batches allow real frustum culling. Fine geometry can disappear at
+ * overview scale without removing a whole district or a building silhouette. */
+export function batchStatic(root, { chunkSize = Infinity } = {}) {
   root.updateMatrixWorld(true);
-  const batches = new Map();
+  const batches = new Map(), chunks = new Set();
+  const size = new THREE.Vector3(), center = new THREE.Vector3();
+  let originalMeshes = 0;
   root.traverse((object) => {
     if (!object.isMesh) return;
-    const mat = object.material;
-    if (!batches.has(mat)) batches.set(mat, []);
-    const geo = object.geometry.clone();
+    originalMeshes++;
+    const original = object.material, mat = bakedMaterial(original);
+    let geo = object.geometry.clone();
     geo.applyMatrix4(object.matrixWorld);
+    if (geo.index) { const indexed = geo; geo = indexed.toNonIndexed(); indexed.dispose(); }
     if (!geo.attributes.uv) geo.setAttribute('uv', new THREE.Float32BufferAttribute(new Float32Array(geo.attributes.position.count * 2), 2));
-    // Non-indexed geometry allows primitives and custom roofs to share a batch.
-    batches.get(mat).push(geo.index ? geo.toNonIndexed() : geo);
+    if (mat !== original) {
+      const values = new Float32Array(geo.attributes.position.count * 3), previous = geo.attributes.color;
+      for (let i = 0; i < geo.attributes.position.count; i++) {
+        values[i * 3] = original.color.r * (previous ? previous.getX(i) : 1);
+        values[i * 3 + 1] = original.color.g * (previous ? previous.getY(i) : 1);
+        values[i * 3 + 2] = original.color.b * (previous ? previous.getZ(i) : 1);
+      }
+      geo.setAttribute('color', new THREE.BufferAttribute(values, 3));
+    }
+    geo.computeBoundingBox(); geo.boundingBox.getSize(size); geo.boundingBox.getCenter(center);
+    const dimensions = [size.x, size.y, size.z].sort((a, b) => a - b);
+    const fine = Number.isFinite(chunkSize) && mat !== original && (dimensions[2] < 1.15 || (dimensions[0] < 0.075 && dimensions[1] < 0.12 && dimensions[2] < 8));
+    const chunk = Number.isFinite(chunkSize) ? `${Math.floor(center.x / chunkSize)},${Math.floor(center.z / chunkSize)}` : 'all';
+    const key = `${chunk}:${fine}:${mat.uuid}`;
+    chunks.add(chunk);
+    if (!batches.has(key)) batches.set(key, { mat, fine, geometries: [] });
+    batches.get(key).geometries.push(geo);
   });
   root.clear();
-  let triangles = 0;
-  for (const [mat, geometries] of batches) {
+  let triangles = 0, detailBatches = 0;
+  for (const { mat, fine, geometries } of batches.values()) {
     const merged = mergeGeometries(geometries, false);
     geometries.forEach((geometry) => geometry.dispose());
     if (!merged) continue;
+    merged.computeBoundingSphere();
     const object = new THREE.Mesh(merged, mat);
     object.castShadow = true; object.receiveShadow = true;
+    object.userData.fineDetail = fine;
+    if (fine) detailBatches++;
     triangles += merged.attributes.position.count / 3;
     root.add(object);
   }
-  return { batches: batches.size, triangles };
+  return { batches: batches.size, triangles, originalMeshes, detailBatches, chunks: chunks.size };
 }
 
 export function seededRandom(seed = 42) {

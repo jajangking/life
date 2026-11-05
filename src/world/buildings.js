@@ -1,11 +1,9 @@
 import * as THREE from 'three';
 import { palette as P, material } from './kit.js';
 
-export function buildNeighborhood(kit, props, dynamic, state) {
-  const { box, cyl, ball, rod, slab, ring, sign, mesh, root } = kit;
-  const places = [];
+export function createArchitecture(kit, state) {
+  const { box, cyl, ball, rod, mesh, root } = kit;
   const glass = state.windowMaterial;
-
   function windowAt(x, y, z, w = 0.8, h = 0.95, parent = root, angle = 0) {
     const g = new THREE.Group(); parent.add(g); g.position.set(x, y, z); g.rotation.y = angle;
     box(w + 0.13, h + 0.13, 0.10, 0, 0, 0, '#e7dcc1', g);
@@ -78,6 +76,16 @@ export function buildNeighborhood(kit, props, dynamic, state) {
     for (let i = 0; i < 4; i++) box(0.19, 0.014, 0.02, -0.17, -0.12 + i * 0.07, 0.16, '#85988a', g);
     box(0.72, 0.04, 0.38, 0, -0.24, 0, P.metal, g);
   }
+
+  return { windowAt, door, pitchedRoof, balcony, awning, ac };
+}
+
+export function buildNeighborhood(kit, props, dynamic, state) {
+  const { box, cyl, ball, rod, slab, ring, sign, mesh, root } = kit;
+  const places = [];
+  const glass = state.windowMaterial;
+
+  const { windowAt, door, pitchedRoof, balcony, awning, ac } = createArchitecture(kit, state);
 
   function addPlace(id, name, kind, description, x, y, z, color, facts) {
     places.push({ id, name, kind, description, position: new THREE.Vector3(x, y, z), color, facts });

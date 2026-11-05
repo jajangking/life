@@ -1,0 +1,44 @@
+/* New capabilities live in the existing controls/dialog, not another layer
+   over the phone headline or the canvas. */
+.district-list { display: grid; gap: 7px; margin: 22px 0 14px; }
+.district-list > button {
+  display: flex; align-items: center; gap: 12px; width: 100%; min-height: 68px;
+  padding: 10px 12px; border: 1px solid var(--line); border-radius: 12px;
+  text-align: left; background: transparent;
+}
+.district-list > button:hover { background: var(--accent-soft); }
+.district-icon { width: 38px; height: 38px; flex-shrink: 0; display: grid; place-items: center; background: var(--accent-soft); color: var(--accent); border-radius: 10px; }
+.district-list strong { display: block; font-size: 12px; font-weight: 600; }
+.district-list small { display: block; font-size: 10px; color: var(--muted); margin-top: 5px; line-height: 1.5; }
+.district-list > button > svg:last-child { margin-left: auto; flex-shrink: 0; color: var(--muted); }
+.cinema-start { display: flex; gap: 10px; align-items: center; justify-content: center; width: 100%; min-height: 46px; padding: 10px; border-radius: 10px; color: var(--solid); background: var(--accent); font-size: 11px; font-weight: 500; }
+.cinema-start > svg:last-child { margin-left: auto; }
+.city-settings { padding-top: 20px; margin-top: 22px; border-top: 1px solid var(--line); }
+.city-settings h3 { font-size: 11px; font-weight: 500; margin: 0 0 10px; }
+.city-settings h3:not(:first-child) { margin-top: 20px; }
+.setting-options { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 5px; }
+.setting-options > button { min-height: 44px; padding: 8px 5px; font-size: 10px; border: 1px solid var(--line); border-radius: 9px; background: transparent; line-height: 1.4; }
+.setting-options > button[aria-pressed='true'] { background: var(--accent-soft); border-color: var(--faint); color: var(--accent); font-weight: 600; }
+.info-dialog .settings-note { color: var(--muted); font-size: 10px; line-height: 1.7; margin: 12px 0 0; }
+.scene-hint { max-width: calc(100% - 32px); white-space: normal; text-align: center; }
+.scene-hint > span { font-size: 9px; line-height: 1.5; }
+.scene-hint > span::after { content: none; }
+.activity-item > span:nth-child(2) { min-width: 0; }
+.activity-item small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 195px; }
+
+@media (max-width: 760px), (max-width: 1000px) and (max-height: 500px) {
+  .district-list { gap: 6px; margin-top: 16px; }
+  .district-list > button { min-height: 68px; padding: 9px; gap: 9px; }
+  .district-list strong { font-size: 12px; }
+  .district-list small { font-size: 10px; }
+  .district-icon { width: 32px; height: 36px; }
+  .setting-options > button { font-size: 11px; }
+  .scene-hint { max-width: calc(100% - 16px); }
+  .scene-hint > span { font-size: 8px; }
+}
+
+/* Fade the desktop viewport into the editorial sidebar when a district is
+   viewed up close; the phone canvas remains an unmasked, separate grid cell. */
+@media (min-width: 1001px), (min-width: 761px) and (min-height: 501px) {
+  .world canvas { mask-image: linear-gradient(to right, transparent 48px, #000 152px); }
+}

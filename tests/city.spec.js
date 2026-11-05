@@ -14,7 +14,7 @@ test('the city renders, stays alive, and has no runtime errors', async ({ page }
   await expect(page.getByRole('heading', { name: 'Dunia kecil. Cerita besar.' })).toBeVisible();
   await expect(page.locator('#world canvas')).toBeVisible();
   await expect(page.locator('#loading')).toBeHidden();
-  expect(await state(page)).toMatchObject({ residents: 28, places: 9, running: true, period: 'sore' });
+  expect(await state(page)).toMatchObject({ residents: 40, places: 18, districts: 3, running: true, period: 'sore' });
   const before = (await state(page)).time;
   await expect.poll(async () => (await state(page)).time).toBeGreaterThan(before);
   expect(errors).toEqual([]);
@@ -53,7 +53,7 @@ test('time, pause, speed, labels and zoom controls really change the simulation'
 test('residents can be searched, selected and followed', async ({ page }) => {
   await enterCity(page);
   await page.locator('#nav-people').click();
-  await expect(page.locator('.resident-row')).toHaveCount(28);
+  await expect(page.locator('.resident-row')).toHaveCount(40);
   await page.locator('#resident-search').fill('Naya');
   await expect(page.locator('.resident-row')).toHaveCount(1);
   await page.locator('.resident-row').click();
@@ -68,7 +68,7 @@ test('residents can be searched, selected and followed', async ({ page }) => {
   await expect(page.locator('#selection')).toBeHidden();
   await page.locator('#nav-people').click();
   await expect(page.locator('#resident-search')).toHaveValue('');
-  await expect(page.locator('.resident-row')).toHaveCount(28);
+  await expect(page.locator('.resident-row')).toHaveCount(40);
   await page.locator('#resident-search').fill('Tidak Ada');
   await expect(page.locator('.empty-state')).toBeVisible();
 });

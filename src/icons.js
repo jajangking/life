@@ -1,4 +1,7 @@
 const paths = {
+  film: '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="m10 8 6 4-6 4ZM3 8h3m-3 8h3M18 8h3m-3 8h3"/>',
+  rain: '<path d="M5 15a4 4 0 0 1-1-7.8 6 6 0 0 1 11.5-1A4.5 4.5 0 1 1 19 15M7 18l-1 3m6-3-1 3m6-3-1 3"/>',
+  bus: '<rect x="4" y="3" width="16" height="16" rx="3"/><path d="M4 11h16M9 3v8m6-8v8M7 19v2m10-2v2M7 15h1m8 0h1"/>',
   sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M4.9 4.9l1.4 1.4m11.4 11.4 1.4 1.4M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>',
   sunrise: '<path d="M3 17h18M5 21h14M7 17a5 5 0 0 1 10 0M12 3v5m-3-2 3-3 3 3M3 11l2 2m14 0 2-2"/>',
   sunset: '<path d="M3 17h18M5 21h14M7 17a5 5 0 0 1 10 0M12 3v5m-3-3 3 3 3-3M3 11l2 2m14 0 2-2"/>',

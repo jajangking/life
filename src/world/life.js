@@ -1,26 +1,6 @@
 import * as THREE from 'three';
 import { batchStatic, palette as P } from './kit.js';
-
-function route(points) {
-  const p = points.map(([x, z]) => new THREE.Vector3(x, 0.31, z));
-  const lengths = p.map((v, i) => v.distanceTo(p[(i + 1) % p.length]));
-  const total = lengths.reduce((a, b) => a + b, 0);
-  return {
-    total,
-    at(distance, out) {
-      let d = ((distance % total) + total) % total;
-      for (let i = 0; i < lengths.length; i++) {
-        if (d <= lengths[i]) {
-          const a = p[i], b = p[(i + 1) % p.length];
-          out.lerpVectors(a, b, d / lengths[i]);
-          return Math.atan2(b.x - a.x, b.z - a.z);
-        }
-        d -= lengths[i];
-      }
-      return 0;
-    },
-  };
-}
+import { createJourney, createTrafficSimulation } from './simulation.js';
 
 const residents = [
   ['Sari', 'Pemilik Kopi Pagi', 'Membawa cerita dan secangkir kopi ke meja teras.', '#c88d70'],
@@ -51,9 +31,21 @@ const residents = [
   ['Pak Yanto', 'Penjaga kampung', 'Berjalan pelan, memastikan semua baik-baik saja.', '#869b91'],
   ['Eka', 'Jurnalis', 'Kabar baik hari ini: kampung terasa seperti rumah.', '#bbad8b'],
   ['Sinta', 'Koki rumahan', 'Mencari bahan segar untuk makan malam keluarga.', '#a296b1'],
+  ['Dewi', 'Penjual bunga', 'Membawa warna dari Pasar Kenanga ke halaman tetangga.', '#bf9783'],
+  ['Pak Udin', 'Pedagang sayur', 'Memilih sayur paling segar sebelum kios dibuka.', '#8b9d79'],
+  ['Adit', 'Kurir pasar', 'Titipannya kecil. Perjalanannya melintasi seluruh kota.', '#bc9a66'],
+  ['Bu Sulastri', 'Pedagang buah', 'Tahu mangga mana yang sudah manis tanpa perlu dibelah.', '#bd8c77'],
+  ['Rio', 'Mekanik sepeda', 'Selalu punya waktu untuk ban kempis milik tetangga.', '#789d97'],
+  ['Citra', 'Relawan pustaka', 'Merapikan buku dan menyimpan halaman favoritnya.', '#b49b79'],
+  ['Pak Arif', 'Guru sekolah', 'Bel pulang bukan akhir dari percakapan di halaman.', '#a4ad8f'],
+  ['Nino', 'Pelajar', 'Naik angkot 03 bersama Salsa, melewati sungai dan pasar.', '#c5b27e'],
+  ['Salsa', 'Pelajar', 'Selalu memilih kursi dekat jendela angkot.', '#ab97aa'],
+  ['Bu Rini', 'Perawat klinik', 'Menyempatkan jalan kaki di sela waktu istirahat.', '#83a69d'],
+  ['Reno', 'Pembuat roti', 'Aroma roti hangat sudah lebih dulu sampai ke ujung jalan.', '#c4a27e'],
+  ['Maya', 'Warga tepi air', 'Membawa buku kecil untuk dibaca di bawah pohon.', '#91a6ad'],
 ];
 
-export function createPeople(dynamic) {
+export function createPeople(dynamic, traffic) {
   const group = new THREE.Group(); group.name = 'Warga Kampung Mentari'; dynamic.add(group);
   const count = residents.length;
   const skin = ['#c38e68', '#d6a37c', '#e1b58a', '#b58260', '#cc9772'];
@@ -81,16 +73,23 @@ export function createPeople(dynamic) {
     m.frustumCulled = false;
     group.add(m); meshes[name] = m;
   }
-  const routes = [
-    route([[-12.9, -10.8], [-2.65, -10.8], [-2.65, -2.65], [-12.9, -2.65]]),
-    route([[2.7, -11.15], [12.75, -11.15], [12.75, -2.65], [2.7, -2.65]]),
-    route([[-12.9, 2.7], [-2.65, 2.7], [-2.65, 11.35], [-12.9, 11.35]]),
-    route([[2.7, 2.7], [13.15, 2.7], [13.15, 11.45], [2.7, 11.45]]),
-    route([[7.3, -10.4], [7.3, -8.7], [5.25, -6.3], [7.3, -4.2], [9.55, -6.3], [7.3, -8.7]]),
-    route([[-12.7, -2.7], [-3.3, -2.7], [-3.3, 2.7], [3.3, 2.7], [3.3, 11.45], [13.1, 11.45], [13.1, 2.7], [3.3, 2.7], [3.3, -2.7], [-3.3, -2.7]]),
+  // Routes follow sidewalks and the pedestrian bridge. Named stops have
+  // dwell times; residents arrive, linger and leave instead of orbiting forever.
+  const plans = [
+    [[-12.9,-10.8,3,'Menyapa tetangga'],[-2.65,-10.8],[-2.65,-2.65],[-4.4,-2.65,10,'Berbelanja di depan Toko Mentari',false,false,'Toko Mentari'],[-12.9,-2.65]],
+    [[2.7,-11.15],[12.75,-11.15],[12.75,-2.65,4,'Melihat taman'],[2.7,-2.65],[2.7,-6.3],[4.7,-6.4,15,'Duduk di bawah pohon',true,false,'bangku taman'],[2.7,-6.3]],
+    [[-12.75,2.7],[-2.65,2.7],[-2.65,6.35],[-4.35,6.35,9,'Singgah di Studio Kecil',false,false,'Studio Kecil'],[-2.65,6.35],[-2.65,10.9],[-12.75,10.9]],
+    [[2.7,2.7],[13.15,2.7],[13.15,11.45],[4.15,11.45,9,'Menyapa tetangga di pagar rumah',false,false,'rumah'],[2.7,11.45]],
+    [[19.2,-11.2],[27.5,-11.2],[27.5,-2.65],[23.5,-2.65,10,'Memilih sayur di Pasar Kenanga',false,false,'Pasar Kenanga'],[19.2,-2.65]],
+    [[19.2,2.65],[27.5,2.65],[27.5,10.9],[23.4,10.9,11,'Membeli roti hangat',false,false,'Ruko Kenanga'],[19.2,10.9]],
+    [[2.7,-16],[13.5,-16],[13.5,-23.5],[16,-23.5],[16,-31.4,5,'Melihat halaman sekolah',false,false,'titian sungai'],[16,-23.5],[8,-23.5,14,'Membaca di tepi sungai',true,false,'bangku sungai'],[2.7,-23.5]],
+    [[-12.75,-16],[-2.65,-16],[-2.65,-23.5],[-12.75,-23.5,8,'Beristirahat di dekat rusun',false,false,'Rusun Tepi Air']],
+    [[33,-37.8],[41.6,-37.8],[41.6,-31.4],[33,-31.4,8,'Melihat permainan di lapangan',false,false,'lapangan sekolah']],
   ];
+  const planFor = (i) => i < 28 ? plans[i % 4] : plans[[4,4,4,4,5,6,6,8,8,5,5,7][i-28]];
   const agents = residents.map(([name, job, story, color], i) => {
-    const r = routes[i % routes.length];
+    const plan = planFor(i);
+    const journey = createJourney(plan, { speed: 0.48 + (i % 5) * 0.065, start: i % plan.length, initialWait: i % 4 });
     const rig = new THREE.Object3D();
     const parts = [];
     const addPart = (key, index, parent, x, y, z, scale = null) => {
@@ -123,55 +122,82 @@ export function createPeople(dynamic) {
     meshes.hair.setColorAt(i, new THREE.Color(hair[i % hair.length]));
     meshes.bag.setColorAt(i, new THREE.Color('#a98059'));
     return {
-      id: `warga-${i}`, name, job, story, color, rig, parts, arms, legs, route: r,
-      distance: i / count * r.total * 3.1, speed: 0.38 + (i % 5) * 0.055,
+      id: `warga-${i}`, name, job, story, color, rig, parts, arms, legs, journey,
+      speed: 0.48 + (i % 5) * 0.065,
       position: rig.position, heading: 0, seated: false, stationary: false,
       activity: ['Menikmati jalan sore', 'Berkeliling kampung', 'Menyapa tetangga', 'Menuju taman', 'Mencari tempat singgah'][i % 5],
     };
   });
-  // A few residents linger. A living city also needs people doing nothing.
-  const sitting = [
-    [0, -7.6, 10.8, Math.PI, 'Menikmati kopi di teras'],
-    [5, 4.7, -6.4, -Math.PI / 2, 'Duduk di bawah pohon'],
-    [15, 10.0, -4.45, Math.PI, 'Menunggu teman di taman'],
-    [22, -4.45, 8.7, Math.PI, 'Bekerja dari teras kafe'],
-    [23, 6.0, -9.55, 0, 'Mendengarkan air mancur'],
-  ];
-  sitting.forEach(([i, x, z, a, activity]) => {
-    const p = agents[i]; p.stationary = true; p.seated = true;
-    p.position.set(x, 0.34, z); p.heading = a; p.activity = activity;
-  });
-  const standing = [[1, -4.4, -3.55, Math.PI], [8, -9.1, -3.8, 0], [18, 2.8, 9.0, Math.PI / 2]];
-  standing.forEach(([i, x, z, a]) => {
-    const p = agents[i]; p.stationary = true; p.position.set(x, 0.31, z); p.heading = a;
-    p.activity = i === 1 ? 'Menata buah di depan toko' : i === 8 ? 'Menyiapkan nasi goreng' : 'Bertukar kabar dengan tetangga';
-  });
+  const setPlan = (index, points, speed = agents[index].speed) => { agents[index].journey = createJourney(points, { speed }); };
+  setPlan(0, [[-7.6,10.8,20,'Menikmati kopi di teras',true],[-6.3,10.8],[-6.3,8.85],[-7.3,8.85,2,'Merapikan cangkir di pintu kafe',false,false,'teras Kopi Pagi',true],[-6.3,8.85],[-6.3,10.8],[-2.65,10.8],[-2.65,6.35],[-4.35,6.35,12,'Mengantar kopi ke studio',false,false,'Studio Kecil'],[-2.65,6.35],[-2.65,10.8]]);
+  setPlan(1, [[-4.4,-3.55,25,'Menata buah di depan toko'],[-3.3,-3.55,9,'Memeriksa persediaan sayur'],[-4.4,-3.55,18,'Menyapa pelanggan toko']]);
+  setPlan(2, [[-4.35,6.35,10,'Menggambar di teras studio'],[-2.65,6.35],[-2.65,2.7],[-12.75,2.7],[-12.75,10.8],[-2.65,10.8],[-2.65,6.35]]);
+  setPlan(5, [[4.7,-6.4,26,'Duduk di bawah pohon',true],[2.7,-6.3],[2.7,-2.65],[7.3,-2.65],[7.3,-4.2,8,'Mendengarkan air mancur'],[2.7,-4.2],[2.7,-6.3]]);
+  setPlan(8, [[-9.1,-3.8,34,'Menyiapkan nasi goreng'],[-10.6,-3.0,8,'Melayani pelanggan gerobak'],[-9.1,-3.8,18,'Merapikan panci dan bumbu']]);
+  setPlan(18, [[2.8,9,19,'Bertukar kabar dengan tetangga'],[2.7,11.45],[7.9,11.45,10,'Singgah di halaman tetangga'],[2.7,11.45]]);
+  setPlan(22, [[-4.45,8.7,34,'Bekerja dari teras kafe',true,false,'payung teras kafe',true],[-2.65,8.7],[-2.65,6.35],[-4.35,6.35,12,'Bertukar ide di Studio Kecil'],[-2.65,6.35],[-2.65,8.7]]);
+  setPlan(23, [[6,-9.55,24,'Mendengarkan air mancur',true],[7.3,-9.55],[7.3,-8.7],[9.55,-6.3],[7.3,-4.2],[7.3,-8.7],[7.3,-9.55]]);
 
-  function update(time, delta) {
+  const umbrellaAgents = [3,6,10,14,17,28,33,39];
+  const canopies = new THREE.InstancedMesh(new THREE.ConeGeometry(0.38, 0.15, 8), new THREE.MeshStandardMaterial({ color: '#c1b07b', roughness: 0.9 }), umbrellaAgents.length);
+  const stems = new THREE.InstancedMesh(new THREE.CylinderGeometry(0.012,0.012,0.65,5), new THREE.MeshStandardMaterial({color:'#7d7961'}), umbrellaAgents.length);
+  canopies.frustumCulled = stems.frustumCulled = false; dynamic.add(canopies, stems);
+  const pose = new THREE.Object3D();
+  let commuterStop = 'kenanga', onBus = false, dropAt = -100;
+  function update(time, delta, { rain = false, period = 'sore' } = {}) {
+    const bus = traffic?.vehicles.find(v => v.type === 'angkot');
+    const courier = traffic?.vehicles.find(v => v.type === 'courier');
+    if (bus?.passengers) onBus = true;
+    else if (onBus && bus?.stop) { onBus = false; commuterStop = bus.stop.id; dropAt = time; }
     agents.forEach((agent, i) => {
-      if (!agent.stationary) {
-        agent.distance += delta * agent.speed;
-        const angle = agent.route.at(agent.distance, agent.position);
-        let diff = angle - agent.heading;
-        diff = Math.atan2(Math.sin(diff), Math.cos(diff));
-        agent.heading += diff * Math.min(1, delta * 10 + 0.15);
+      const journey = agent.journey.update(delta, { rain });
+      agent.position.set(journey.x, 0.31, journey.z); agent.heading = journey.heading;
+      agent.sheltered = journey.sheltered; agent.stationary = !journey.moving; agent.seated = journey.seated; agent.hidden = journey.hidden;
+      agent.activity = journey.activity;
+      if (i === 1 && period === 'malam') agent.activity = 'Merapikan toko sebelum pulang';
+      if (i === 30 && courier) {
+        const age = courier.stopAge;
+        agent.hidden = !courier.stop || courier.stop.id !== 'delivery'; agent.seated = false;
+        const t = age < 6 ? Math.min(1, age / 6) : age < 8 ? 1 : Math.max(0, 1 - (age - 8) / 5);
+        agent.position.set(courier.x + (23.5 - courier.x) * t, 0.31, courier.z + (-3.8 - courier.z) * t);
+        agent.heading = age < 8 ? 2.5 : -0.6; agent.stationary = age >= 6 && age < 8;
+        agent.carrying = age < 6; agent.activity = agent.hidden ? 'Mengantar persediaan dengan motor' : agent.stationary ? 'Menyerahkan kiriman ke pedagang' : 'Membawa kiriman untuk pasar';
+        if (agent.hidden) agent.position.set(courier.x,0.31,courier.z);
       }
-      agent.rig.rotation.y = agent.heading;
+      if ((i === 35 || i === 36) && bus) {
+        const curb = commuterStop === 'kenanga' ? {x:42.45,z:-7.4+(i-35)*2} : {x:5.15+(i-35)*2.1,z:-37.0};
+        agent.hidden = onBus; agent.seated = false; agent.stationary = true;
+        if (onBus) agent.position.set(bus.x,0.31,bus.z);
+        else {
+          const boarding = bus.stop?.id === commuterStop && bus.stopAge < 3 && (traffic.waiting[commuterStop] || 0) > 0;
+          const approach = boarding ? Math.min(1,bus.stopAge/3) : Math.max(0,1-(time-dropAt)/3);
+          agent.position.set(curb.x+(bus.x-curb.x)*approach,0.31,curb.z+(bus.z-curb.z)*approach);
+          agent.stationary = approach === 0; agent.heading = Math.atan2(bus.x-curb.x,bus.z-curb.z);
+        }
+        agent.activity = onBus ? 'Naik angkot 03 keliling kota' : agent.stationary ? `Menunggu angkot di ${commuterStop === 'kenanga' ? 'Halte Kenanga' : 'Halte Sekolah'}` : 'Berjalan naik / turun angkot';
+      }
+      agent.rig.rotation.y = agent.heading; agent.rig.scale.setScalar(agent.hidden ? 0 : 1);
       const phase = time * 6 * agent.speed + i * 1.7;
       const stride = agent.stationary ? 0 : Math.sin(phase) * 0.48;
-      agent.rig.position.y = agent.seated ? 0.34 : 0.31 + (agent.stationary ? 0 : Math.abs(Math.sin(phase)) * 0.015);
-      agent.arms[0].rotation.x = stride * 0.8;
-      agent.arms[1].rotation.x = -stride * 0.8;
-      agent.legs[0].rotation.x = agent.seated ? -1.25 : -stride;
-      agent.legs[1].rotation.x = agent.seated ? -1.25 : stride;
+      const floor = Math.abs(agent.position.x-16) < 0.8 && agent.position.z < -24.2 && agent.position.z > -30.8 ? 0.43 : 0.31;
+      agent.position.y = agent.seated ? 0.34 : floor + (agent.stationary ? 0 : Math.abs(Math.sin(phase)) * 0.015);
+      agent.arms[0].rotation.x = stride * 0.8; agent.arms[1].rotation.x = -stride * 0.8;
+      agent.legs[0].rotation.x = agent.seated ? -1.25 : -stride; agent.legs[1].rotation.x = agent.seated ? -1.25 : stride;
       if (agent.stationary) agent.arms[1].rotation.z = Math.sin(time * 0.7 + i) * 0.07 - 0.06;
       agent.rig.updateMatrixWorld(true);
       agent.parts.forEach(({ object, key, index }) => meshes[key].setMatrixAt(index, object.matrixWorld));
     });
+    umbrellaAgents.forEach((index,i) => {
+      const a = agents[index]; pose.position.copy(a.position); pose.position.y += 1.16;
+      pose.scale.setScalar(!a.hidden && !a.seated ? 1 : 0); pose.updateMatrix(); canopies.setMatrixAt(i,pose.matrix);
+      pose.position.y -= 0.33; pose.updateMatrix(); stems.setMatrixAt(i,pose.matrix);
+    });
+    canopies.visible = stems.visible = rain;
+    canopies.instanceMatrix.needsUpdate = stems.instanceMatrix.needsUpdate = true;
     Object.values(meshes).forEach((m) => { m.instanceMatrix.needsUpdate = true; });
   }
   update(0, 0);
-  return { agents, update, pickable: meshes.body, pickables: [meshes.body, meshes.head] };
+  return { agents, update, getState: () => ({ walking: agents.filter(a=>!a.stationary&&!a.hidden).length, resting: agents.filter(a=>a.stationary&&!a.hidden).length, onTransport: agents.filter(a=>a.hidden).length, sheltering: agents.filter(a=>a.sheltered&&!a.hidden).length, arrivals: agents.reduce((n,a)=>n+a.journey.state.arrivals,0) }) };
 }
 
 export function createTraffic(kit, dynamic) {
@@ -220,51 +246,50 @@ export function createTraffic(kit, dynamic) {
     });
     box(0.53, 0.035, 0.055, 0, 0.85, 0.39, P.metal, g);
     ball(0.08, 0, 0.72, 0.43, '#e8d9aa', g);
+    const rider = new THREE.Group();
     if (!parked) {
-      box(0.24, 0.3, 0.2, 0, 0.86, -0.05, '#aa976c', g);
-      ball(0.13, 0, 1.12, -0.03, '#617e77', g);
+      box(0.24, 0.3, 0.2, 0, 0.86, -0.05, '#aa976c', rider);
+      ball(0.13, 0, 1.12, -0.03, '#617e77', rider);
       [-1, 1].forEach((s) => {
-        box(0.07, 0.23, 0.08, s * 0.16, 0.8, 0.1, '#a68f6b', g).rotation.x = -0.8;
-        box(0.08, 0.23, 0.09, s * 0.16, 0.56, -0.02, '#657265', g);
+        box(0.07, 0.23, 0.08, s * 0.16, 0.8, 0.1, '#a68f6b', rider).rotation.x = -0.8;
+        box(0.08, 0.23, 0.09, s * 0.16, 0.56, -0.02, '#657265', rider);
       });
     }
-    batchStatic(g); contactShadow(g, 0.48, 1.0); return g;
+    batchStatic(g);
+    if (!parked) { batchStatic(rider); g.add(rider); g.userData.rider = rider; }
+    contactShadow(g, 0.48, 1.0); return g;
   }
-  function loop(x0, x1, z0, z1, reverse = false) {
-    const r = 1.6;
-    let points = [[x0 + r, z0], [x1 - r, z0], [x1, z0 + r], [x1, z1 - r], [x1 - r, z1], [x0 + r, z1], [x0, z1 - r], [x0, z0 + r]];
-    if (reverse) points = points.reverse();
-    return new THREE.CatmullRomCurve3(points.map(([x, z]) => new THREE.Vector3(x, 0.19, z)), true, 'centripetal', 0.15);
-  }
-  const paths = [loop(-15.78, 15.78, -13.78, 13.78), loop(-14.55, 14.55, -12.55, 12.55, true), loop(-14.7, -0.83, -12.6, -0.83), loop(0.83, 14.6, 0.83, 12.6, true)];
-  const configs = [
-    ['#739980', 'angkot', 0, 0.04, 1.8], ['#d8bc7a', 'car', 0, 0.37, 2.05],
-    ['#b77d60', 'car', 0, 0.72, 1.95], ['#d8d7c0', 'car', 1, 0.16, 1.9],
-    ['#809fa4', 'car', 1, 0.63, 2.0], ['#ba9d69', 'scooter', 2, 0.2, 1.65],
-    ['#a97c65', 'scooter', 3, 0.58, 1.7], ['#879b79', 'car', 2, 0.74, 1.6],
-  ];
-  const vehicles = configs.map(([color, type, path, t, speed]) => ({
-    mesh: type === 'scooter' ? scooter(color) : car(color, type), path: paths[path], t, speed,
-    length: paths[path].getLength(), crossStreet: path > 1,
-  }));
-  [[-3.0, -4.8, Math.PI / 2, '#7d9c8c'], [6.35, 8.8, 0.25, '#d2b178'], [-12.3, -6.1, 0, '#b58675']].forEach(([x, z, a, color]) => {
-    const m = scooter(color, true); m.position.set(x, 0.29, z); m.rotation.set(0, a, -0.12);
+  const simulation = createTrafficSimulation();
+  const vehicles = simulation.vehicles;
+  vehicles.forEach(v => {
+    v.mesh = ['scooter','courier'].includes(v.type) ? scooter(v.color) : car(v.color,v.type);
+    if (v.type === 'angkot') {
+      const passengers = new THREE.Group(); v.mesh.add(passengers);
+      [-1,1].forEach(side=>ball(0.075,side*0.43,0.99,-0.3,'#d0a581',passengers));
+      batchStatic(passengers); v.passengerMesh = passengers;
+    }
+    if (v.type === 'courier') {
+      box(0.48,0.4,0.42,0,0.72,-0.37,'#c6aa79',v.mesh);
+    }
+    const brakeMaterial = new THREE.MeshStandardMaterial({color:'#a66b53',emissive:'#ef6a44',emissiveIntensity:0.05});
+    const brakes = new THREE.Group(); v.mesh.add(brakes);
+    [-1,1].forEach(side => box(0.12,0.08,0.035,side*(['scooter','courier'].includes(v.type)?0.1:0.27),0.46,-v.length/2-0.01,brakeMaterial,brakes));
+    batchStatic(brakes); v.brakeMaterial = brakeMaterial;
   });
-  const tangent = new THREE.Vector3();
+  [[-3,-4.8,Math.PI/2,'#7d9c8c'],[6.35,8.8,0.25,'#d2b178'],[33.2,9.5,0,'#b58675'],[19.5,-2.8,Math.PI/2,'#7d9c8c']].forEach(([x,z,a,color])=>{
+    const m=scooter(color,true);m.position.set(x,0.29,z);m.rotation.set(0,a,-0.12);
+  });
   function update(time, delta) {
-    vehicles.forEach((v) => {
-      const previous = v.mesh.position;
-      // Give way at the central crossing; vehicles on the ring road keep moving.
-      const atSignal = v.crossStreet && Math.abs(previous.x) < 1.3 && Math.abs(previous.z) < 5.2 && Math.abs(previous.z) > 4.0;
-      const green = Math.floor(time / 13) % 2 === 0;
-      if (!(atSignal && !green)) v.t = (v.t + delta * v.speed / v.length) % 1;
-      v.path.getPointAt(v.t, v.mesh.position);
-      v.path.getTangentAt(v.t, tangent);
-      v.mesh.rotation.y = Math.atan2(tangent.x, tangent.z);
+    simulation.update(delta);
+    vehicles.forEach(v=>{
+      v.mesh.position.set(v.x,0.19,v.z); v.mesh.rotation.y=Math.atan2(v.dx,v.dz);
+      v.brakeMaterial.emissiveIntensity = v.speed < 0.4 ? 1.5 : 0.06;
+      if (v.passengerMesh) v.passengerMesh.visible = v.passengers > 0;
+      if (v.mesh.userData.rider) v.mesh.userData.rider.visible = !(v.type === 'courier' && v.stop);
     });
   }
-  update(0, 0);
-  return { vehicles, update };
+  update(0,0);
+  return { ...simulation, vehicles, update };
 }
 
 export function createBirds(kit, dynamic) {

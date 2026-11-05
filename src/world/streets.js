@@ -1,13 +1,14 @@
 import * as THREE from 'three';
 import { palette as P, material } from './kit.js';
+import { WORLD } from './simulation.js';
 
 export function buildStreets(kit, props, state) {
   const { box, cyl, slab, ring, ball, sign, root } = kit;
   // The exposed layers make this feel like a tangible tabletop miniature.
-  slab(35.9, 31.9, 0.3, 1.7, 0, -1.12, 0, '#9a9c7b');
-  slab(36, 32, 1.0, 1.65, 0, -0.58, 0, '#b8b18e');
-  slab(36.03, 32.03, 0.16, 1.65, 0, 0.0, 0, '#a8b584');
-  slab(35.7, 31.7, 0.045, 1.6, 0, 0.09, 0, '#aebb8e');
+  slab(WORLD.width - 0.1, WORLD.depth - 0.1, 0.3, 1.7, WORLD.x, -1.12, WORLD.z, '#9a9c7b');
+  slab(WORLD.width, WORLD.depth, 1.0, 1.65, WORLD.x, -0.58, WORLD.z, '#b8b18e');
+  slab(WORLD.width + 0.03, WORLD.depth + 0.03, 0.16, 1.65, WORLD.x, 0.0, WORLD.z, '#a8b584');
+  slab(WORLD.width - 0.3, WORLD.depth - 0.3, 0.045, 1.6, WORLD.x, 0.09, WORLD.z, '#aebb8e');
 
   // Ring road and the two main streets.
   slab(33.6, 29.6, 0.035, 1.7, 0, 0.125, 0, P.road);
@@ -62,7 +63,8 @@ export function buildStreets(kit, props, state) {
   [[-2.15, -4.6, 0], [2.15, 4.6, Math.PI], [-11.7, -2.05, -Math.PI / 2], [11.7, 2.05, Math.PI / 2], [-12.7, 11.5, 0], [12.7, -11.5, Math.PI], [-13.1, -8, Math.PI], [13.1, 8, 0]].forEach(([x, z, angle]) => props.lamp(x, z, angle));
 
   // Two synchronized traffic-light phases.
-  state.signals = [0, 1].map(() => ({
+  state.signals = [0, 1].map((axis) => ({
+    axis: axis === 0 ? 'vertical' : 'horizontal', offset: 0,
     red: material('#b96c54', { emissive: '#ed6f4d', emissiveIntensity: 0.1 }).clone(),
     amber: material('#b5a061', { emissive: '#efbc5d', emissiveIntensity: 0.1 }).clone(),
     green: material('#779e79', { emissive: '#98cf8d', emissiveIntensity: 0.1 }).clone(),
@@ -84,5 +86,5 @@ export function buildStreets(kit, props, state) {
     const rock = ball(0.09 + (i % 3) * 0.02, x, 0.18, 15.35, i % 2 ? '#bac29a' : '#d1ccb0', root, 0);
     rock.scale.set(1.3, 0.6, 0.8);
   }
-  sign('K A M P U N G   M E N T A R I', 5.0, 0.32, 7.5, -0.51, 16.02, '#b8b18e', '#67775e', root, 67);
+  sign('K O T A   M E N T A R I', 5.0, 0.32, WORLD.x, -0.51, 16.02, '#b8b18e', '#67775e', root, 67);
 }
