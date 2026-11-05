@@ -183,7 +183,7 @@ h1 em { font-weight: 400; color: #7b8f63; }
 .resident-avatar { height: 43px; width: 43px; border-radius: 13px; display: flex; align-items: center; justify-content: center; background: color-mix(in srgb, var(--avatar-color) 25%, var(--solid)); color: var(--avatar-color); flex-shrink: 0; }
 .selection-title h2 { margin: 0; font-size: 18px; letter-spacing: -0.5px; font-weight: 600; }
 .selection-title > div > span { color: var(--muted); font-size: 9px; display: block; margin-top: 4px; }
-.selection-card > p { color: var(--muted); font-size: 11px; line-height: 1.9; margin: 16px 0; }
+.selection-content > p { color: var(--muted); font-size: 11px; line-height: 1.9; margin: 16px 0; }
 .person-activity { display: flex; align-items: center; gap: 6px; font-size: 9px; color: var(--ink); margin: 15px 0 19px; }
 .person-activity > i { flex-shrink: 0; }
 .selection-action { display: flex; align-items: center; justify-content: center; gap: 8px; background: var(--accent); color: var(--solid); width: 100%; min-height: 37px; padding: 8px; font-size: 10px; font-weight: 500; border-radius: 8px; transition: opacity 0.2s; }
@@ -322,109 +322,6 @@ kbd { border: 1px solid var(--line); border-bottom-width: 2px; padding: 4px 5px;
   .neighborhood-stats { justify-content: flex-start; gap: 10px; }
   .scene-hint { bottom: 103px; }
   .selection-card { right: 74px; width: 280px; }
-}
-@media (max-width: 760px) {
-  .app-shell { height: 100svh; min-height: 700px; }
-  .world { left: 0; top: 175px; bottom: 136px; }
-  .header { top: 20px; left: 20px; right: 15px; height: 39px; }
-  .brand { gap: 9px; }
-  .brand-mark { width: 36px; height: 36px; }
-  .brand > span:first-of-type { font-size: 22px; letter-spacing: -1px; }
-  .brand-caption, .brand-divider, .weather, .header-separator { display: none !important; }
-  .header-right { gap: 4px; }
-  .header-right > .icon-button { width: 33px; height: 36px; }
-  .header-right > .icon-button > svg { width: 18px; height: 18px; }
-  .top-nav { left: auto; right: 81px; top: 0; transform: none; border: 0; padding: 0; background: transparent; box-shadow: none; }
-  .top-nav #nav-explore, .top-nav #nav-about { display: none; }
-  .nav-button { height: 36px; width: 35px; padding: 0; }
-  .nav-button > span { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; }
-  .nav-button > svg { width: 19px; height: 19px; }
-  .nav-button.is-active { background: var(--accent-soft); color: var(--accent); box-shadow: none; }
-  .sidebar { left: 23px; top: 103px; width: calc(100% - 46px); pointer-events: none; }
-  .sidebar button { pointer-events: auto; }
-  .intro .eyebrow { font-size: 7px; letter-spacing: 1.5px; }
-  h1 { font-size: 39px; letter-spacing: -1.8px; margin: 14px 0 0; line-height: 1.04; white-space: normal; }
-  h1 br { display: initial; }
-  h1 em { white-space: nowrap; }
-  .intro > p, .activity-block { display: none; }
-  .neighborhood-card { position: fixed; left: 21px; bottom: 150px; width: 220px; margin: 0; padding: 11px 12px 0; border-radius: 12px; }
-  .card-overline { display: none; }
-  .neighborhood-main { padding: 0 0 10px; gap: 10px; }
-  .neighborhood-illustration { height: 36px; width: 36px; border-radius: 8px; }
-  .neighborhood-illustration > svg { height: 36px; width: 36px; }
-  .neighborhood-main h2 { font-size: 13px; margin-bottom: 4px; }
-  .neighborhood-main > div:last-child > span { font-size: 8px; }
-  .neighborhood-stats { height: 29px; font-size: 8px; }
-  .neighborhood-stats > span > svg { height: 12px; width: 12px; }
-  .neighborhood-stats .mini-live { font-size: 7px; }
-  .tour-button { position: fixed; right: 21px; bottom: 165px; height: 48px; width: 48px; padding: 0; border-radius: 13px; margin: 0; justify-content: center; background: var(--surface); backdrop-filter: blur(10px); }
-  .tour-button > svg:first-child { width: 23px; height: 23px; }
-  .tour-button > span { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; }
-  .tour-button > svg:last-child { display: none; }
-  .time-panel { top: 216px; left: 50%; width: max-content; }
-  .time-panel-label { font-size: 6px; letter-spacing: 1.4px; margin-bottom: 9px; }
-  .time-options { padding: 4px; gap: 1px; border-radius: 11px; }
-  .time-button { width: 70px; height: 31px; font-size: 9px; gap: 5px; border-radius: 7px; }
-  .time-button svg { width: 15px; height: 15px; }
-  .local-time { display: none; }
-  .scene-tools { right: 11px; top: 42%; gap: 8px; }
-  .tool-stack { padding: 3px; border-radius: 9px; }
-  .tool-stack .icon-button { width: 29px; height: 31px; border-radius: 6px; }
-  .tool-stack .icon-button > svg { width: 14px; height: 14px; }
-  #fullscreen { display: none; }
-  .compass { display: none; }
-  .playback-dock { left: 50%; bottom: 31px; padding: 6px; gap: 5px; border-radius: 14px; }
-  .pause-button { width: 39px; height: 39px; border-radius: 9px; }
-  .speed-control { padding: 0 7px; }
-  .speed-options { gap: 4px; }
-  .speed-control > span { font-size: 5px; }
-  .speed-button { width: 27px; font-size: 9px; height: 21px; }
-  .dock-divider { margin: 0; }
-  .playback-dock > .icon-button { width: 34px; height: 34px; }
-  .playback-dock > .icon-button svg { width: 18px; height: 18px; }
-  .scene-hint { left: 50%; bottom: 112px; font-size: 7px; gap: 6px; }
-  .scene-hint svg { height: 12px; width: 12px; }
-  .hint-dot { padding: 0 4px; }
-  .scene-hint > span { font-size: 0; }
-  .scene-hint > span::after { content: 'Geser untuk memutar · Cubit untuk mendekat'; font-size: 7px; }
-  .footer-note { left: 50%; bottom: 9px; transform: translateX(-50%); white-space: nowrap; font-size: 6px; gap: 4px; }
-  .footer-note > svg { height: 10px; width: 10px; }
-  .labels-toggle { right: 20px; bottom: 246px; font-size: 7px; gap: 4px; background: var(--surface); padding: 7px 8px; border: 1px solid var(--line); border-radius: 7px; }
-  .labels-toggle svg { width: 12px; height: 12px; }
-  .labels-toggle > i { height: 3px; width: 3px; }
-  .place-label { font-size: 7px; padding: 4px 7px 4px 4px; border-radius: 6px; gap: 4px; }
-  .label-icon { width: 17px; height: 17px; border-radius: 4px; }
-  .label-icon svg { height: 10px; width: 10px; }
-  .place-label::after { height: 11px; }
-  .label-dot { bottom: -15px; width: 3px; height: 3px; }
-  .selection-card { width: calc(100% - 42px); bottom: 143px; right: 21px; padding: 19px; border-radius: 15px; }
-  .selection-overline { font-size: 6px; margin-bottom: 12px; }
-  .selection-title h2 { font-size: 17px; }
-  .selection-title .resident-avatar { height: 36px; width: 36px; border-radius: 11px; }
-  .selection-title .resident-avatar svg { width: 21px; height: 21px; }
-  .selection-card > p { font-size: 10px; line-height: 1.8; margin: 11px 0; }
-  .person-activity { font-size: 8px; margin: 12px 0 16px; }
-  .selection-action { min-height: 36px; font-size: 9px; }
-  .place-facts { margin-bottom: 13px; }
-  .place-facts > span { font-size: 7px; }
-  .residents-drawer { top: 84px; left: 21px; right: 21px; bottom: 141px; width: auto; padding: 22px 20px 0; }
-  .drawer-description { font-size: 10px; }
-  .tour-card { width: calc(100% - 42px); left: 50%; bottom: 145px; padding: 20px; }
-  .tour-card h2 { font-size: 24px; }
-  .tour-card p { font-size: 10px; }
-  .info-dialog { padding: 30px 26px; }
-  .info-dialog h2 { font-size: 37px; }
-  .info-dialog p { font-size: 11px; }
-  .keyboard-help { gap: 9px; font-size: 7px; }
-  .toast { bottom: 92px; font-size: 9px; max-width: calc(100% - 36px); white-space: normal; text-align: left; padding: 11px 14px; line-height: 1.5; width: max-content; border-radius: 9px; }
-  [data-tooltip]::after { display: none; }
-  .world-loading { background: transparent; }
-}
-@media (max-width: 390px) {
-  h1 { max-width: 290px; font-size: 35px; }
-  .brand > span:first-of-type { font-size: 20px; }
-  .sidebar { left: 21px; }
-  .time-panel { top: 214px; }
 }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; }

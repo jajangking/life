@@ -1,0 +1,270 @@
+/* A dedicated compact layout. The headline, canvas and controls occupy separate
+   grid tracks; neither a small screen nor browser chrome can stack them together. */
+@media (max-width: 760px), (max-width: 1000px) and (max-height: 500px) {
+  .app-shell {
+    --safe-top: env(safe-area-inset-top, 0px);
+    --safe-right: env(safe-area-inset-right, 0px);
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+    --safe-left: env(safe-area-inset-left, 0px);
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 48px;
+    grid-template-rows: 44px auto 48px minmax(0, 1fr) 44px 52px 60px;
+    grid-template-areas:
+      'header header'
+      'intro intro'
+      'time time'
+      'world world'
+      'tools tools'
+      'info tour'
+      'dock dock';
+    gap: 8px;
+    height: 100svh;
+    height: 100dvh;
+    min-height: 0;
+    padding: max(12px, var(--safe-top)) max(16px, var(--safe-right)) max(12px, var(--safe-bottom)) max(16px, var(--safe-left));
+  }
+
+  .header {
+    grid-area: header;
+    position: relative;
+    inset: auto;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 44px auto;
+    gap: 4px;
+    height: 44px;
+    min-width: 0;
+  }
+  .brand { gap: 8px; min-width: 0; justify-self: start; }
+  .brand-mark { width: 34px; height: 34px; }
+  .brand > span:first-of-type { font-size: clamp(18px, 5vw, 21px); letter-spacing: -0.8px; }
+  .brand-caption, .brand-divider, .weather, .header-separator { display: none !important; }
+  .header-right { gap: 0; }
+  .header-right > .icon-button { width: 44px; height: 44px; }
+  .header-right > .icon-button > svg { width: 19px; height: 19px; }
+  .top-nav { position: static; inset: auto; transform: none; border: 0; padding: 0; background: transparent; box-shadow: none; }
+  .top-nav #nav-explore, .top-nav #nav-about { display: none; }
+  .nav-button { height: 44px; width: 44px; padding: 0; }
+  .nav-button > span, .tour-button > span, .labels-toggle > span {
+    position: absolute; width: 1px; height: 1px; padding: 0;
+    overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap;
+  }
+  .nav-button > svg { width: 20px; height: 20px; }
+  .nav-button.is-active { background: var(--accent-soft); color: var(--accent); box-shadow: none; }
+
+  .sidebar { display: contents; position: static; width: auto; pointer-events: auto; }
+  .intro { grid-area: intro; position: static; min-width: 0; }
+  .intro .eyebrow, .intro > p, .activity-block { display: none; }
+  .intro h1 {
+    font-size: clamp(21px, 6vw, 27px);
+    line-height: 1.2;
+    letter-spacing: -0.7px;
+    white-space: normal;
+    margin: 0;
+    max-width: none;
+    overflow-wrap: break-word;
+  }
+  .intro h1 br { display: none; }
+  .intro h1 em { white-space: nowrap; }
+
+  .time-panel { grid-area: time; position: static; inset: auto; transform: none; width: 100%; min-width: 0; }
+  .time-panel-label { display: none; }
+  .time-options { height: 48px; padding: 3px; gap: 2px; border-radius: 13px; }
+  .time-button { flex: 1; min-width: 0; width: auto; height: 40px; gap: 5px; font-size: 11px; border-radius: 9px; }
+  .time-button svg { width: 16px; height: 16px; }
+
+  .world { grid-area: world; position: relative; inset: auto; min-height: 0; min-width: 0; width: 100%; height: 100%; }
+  .world canvas { width: 100%; height: 100%; }
+  .local-time, .compass, .footer-note { display: none; }
+  .scene-hint {
+    grid-area: world; position: relative; inset: auto; transform: none;
+    align-self: end; justify-self: center; margin-bottom: 2px;
+    font-size: 8px; gap: 5px; pointer-events: none;
+  }
+  .scene-hint svg { height: 12px; width: 12px; }
+  .scene-hint > span { font-size: 0; }
+  .scene-hint > span::after { content: 'Geser untuk memutar · Cubit untuk mendekat'; font-size: 8px; }
+  .hint-dot { display: none; }
+
+  /* Camera controls have their own row, not a rail covering the right-hand houses. */
+  .scene-tools {
+    grid-area: tools; position: relative; inset: auto;
+    align-self: center; justify-self: start; flex-direction: row; gap: 4px;
+    height: 44px; padding: 0 3px; border: 1px solid var(--line);
+    border-radius: 12px; background: var(--surface); backdrop-filter: blur(12px);
+  }
+  .tool-stack { flex-direction: row; gap: 0; border: 0; background: transparent; border-radius: 0; padding: 0; box-shadow: none; backdrop-filter: none; }
+  .tool-stack .icon-button { width: 44px; height: 42px; border-radius: 9px; }
+  .tool-stack .icon-button > svg { width: 18px; height: 18px; }
+  .zoom-stack { position: relative; padding-left: 5px; }
+  .zoom-stack::before { content: ''; position: absolute; left: 0; top: 12px; width: 1px; height: 18px; background: var(--line); }
+  .zoom-stack > span, #fullscreen { display: none; }
+  .labels-toggle {
+    grid-area: tools; position: relative; inset: auto; align-self: center; justify-self: end;
+    display: flex; justify-content: center; padding: 0; width: 44px; height: 44px;
+    background: var(--surface); border: 1px solid var(--line); border-radius: 12px;
+  }
+  .labels-toggle svg { width: 18px; height: 18px; }
+  .labels-toggle > i { position: absolute; right: 7px; top: 7px; width: 4px; height: 4px; margin: 0; }
+
+  .neighborhood-card {
+    grid-area: info; position: static; width: 100%; height: 52px; min-width: 0; margin: 0;
+    display: grid; grid-template-columns: 32px minmax(0, 1fr); grid-template-rows: auto auto;
+    column-gap: 8px; align-content: center; padding: 7px 9px; border-radius: 12px;
+  }
+  .neighborhood-card:hover { transform: none; }
+  .card-overline { display: none; }
+  .neighborhood-main { display: contents; }
+  .neighborhood-illustration { grid-column: 1; grid-row: 1 / 3; align-self: center; width: 32px; height: 32px; border-radius: 9px; }
+  .neighborhood-illustration > svg { width: 32px; height: 32px; }
+  .neighborhood-main > div:last-child { grid-column: 2; grid-row: 1; min-width: 0; }
+  .neighborhood-main h2 { font-size: 13px; line-height: 1.3; margin: 0 0 3px; letter-spacing: -0.3px; }
+  .neighborhood-main > div:last-child > span { display: none; }
+  .neighborhood-stats { grid-column: 2; grid-row: 2; height: auto; border: 0; justify-content: flex-start; gap: 6px; font-size: 8px; line-height: 1.3; }
+  .neighborhood-stats > span { gap: 3px; }
+  .neighborhood-stats svg { width: 11px; height: 11px; }
+  .neighborhood-stats .mini-live { font-size: 7px; margin-left: auto; }
+  .tour-button {
+    grid-area: tour; position: static; align-self: center; width: 48px; height: 52px;
+    padding: 0; border-radius: 12px; margin: 0; justify-content: center;
+    background: var(--surface); backdrop-filter: blur(10px);
+  }
+  .tour-button > svg:first-child { width: 23px; height: 23px; }
+  .tour-button > svg:last-child { display: none; }
+
+  .playback-dock {
+    grid-area: dock; position: relative; inset: auto; transform: none; justify-self: center;
+    height: 60px; width: 100%; max-width: 420px; min-width: 0;
+    padding: 6px; gap: 4px; border-radius: 15px;
+  }
+  .pause-button { width: 44px; height: 44px; flex-shrink: 0; border-radius: 10px; }
+  .speed-control { flex: 1; min-width: 0; padding: 0 4px; gap: 0; }
+  .speed-control > span { font-size: 7px; letter-spacing: 1px; padding-left: 4px; }
+  .speed-options { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 2px; }
+  .speed-button { width: 100%; min-width: 0; height: 32px; font-size: 12px; }
+  .dock-divider { margin: 0; }
+  .playback-dock > .icon-button { width: 44px; height: 44px; }
+  .playback-dock > .icon-button svg { width: 19px; height: 19px; }
+
+  .place-label { font-size: 8px; padding: 5px 8px 5px 5px; border-radius: 7px; gap: 4px; min-height: 28px; }
+  .label-icon { width: 18px; height: 18px; border-radius: 5px; }
+  .label-icon svg { height: 11px; width: 11px; }
+  .place-label::after { height: 11px; }
+  .label-dot { bottom: -15px; width: 3px; height: 3px; }
+
+  /* Bounded bottom sheets: never climb over the header/headline/time controls.
+     Body text scrolls inside; close and primary actions stay reachable. */
+  .selection-card, .tour-card {
+    grid-column: 1 / -1; grid-row: 4 / 7; position: relative; inset: auto; transform: none;
+    align-self: end; width: 100%; min-height: 0; max-height: min(290px, 40dvh);
+    display: flex; flex-direction: column; margin: 0; padding: 16px;
+    border-radius: 18px; overflow: hidden;
+  }
+  .selection-content, .tour-body { min-height: 0; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; }
+  .selection-close, #tour-close { width: 44px; height: 44px; right: 5px; top: 4px; z-index: 2; background: var(--solid); }
+  .selection-overline { padding-right: 32px; font-size: 7px; line-height: 1.5; margin-bottom: 12px; }
+  .selection-title { gap: 10px; }
+  .selection-title > div { min-width: 0; }
+  .selection-title h2 { font-size: 18px; line-height: 1.2; overflow-wrap: anywhere; }
+  .selection-title > div > span { font-size: 10px; line-height: 1.4; }
+  .selection-title .resident-avatar { height: 36px; width: 36px; border-radius: 11px; }
+  .selection-title .resident-avatar svg { width: 21px; height: 21px; }
+  .selection-content > p { font-size: 11px; line-height: 1.7; margin: 12px 0; }
+  .person-activity { font-size: 10px; line-height: 1.5; margin: 12px 0 2px; }
+  .selection-action { min-height: 44px; flex-shrink: 0; font-size: 11px; margin-top: 12px; }
+  .place-facts { margin: 0 0 2px; }
+  .place-facts > span { font-size: 8px; }
+  .tour-progress { flex-shrink: 0; margin-bottom: 14px; padding-right: 40px; }
+  .tour-step { font-size: 7px; line-height: 1.5; gap: 4px; padding-right: 3px; }
+  .tour-step > span { white-space: nowrap; letter-spacing: 0; }
+  .tour-card h2 { font-size: 23px; line-height: 1.2; overflow-wrap: break-word; margin: 10px 0; }
+  .tour-card p { font-size: 11px; line-height: 1.7; margin-bottom: 0; }
+  .tour-next { min-height: 44px; flex-shrink: 0; font-size: 11px; margin-top: 12px; padding-top: 8px; }
+
+  .residents-drawer {
+    grid-column: auto; grid-row: auto; position: absolute;
+    inset: calc(max(12px, var(--safe-top)) + 52px) max(16px, var(--safe-right)) max(12px, var(--safe-bottom)) max(16px, var(--safe-left));
+    width: auto; min-height: 0; max-height: none; padding: 20px 16px 0;
+    overflow: hidden; border-radius: 18px;
+  }
+  .app-shell[data-panel='residents'] .intro,
+  .app-shell[data-panel='residents'] .time-panel { visibility: hidden; }
+  .drawer-heading { padding-right: 40px; }
+  .drawer-heading h2 { font-size: 30px; }
+  .drawer-heading .eyebrow { font-size: 7px; line-height: 1.5; letter-spacing: 0.7px; }
+  .drawer-close { width: 44px; height: 44px; right: -4px; top: -7px; }
+  .drawer-description { font-size: 11px; line-height: 1.6; margin: 10px 0 14px; }
+  .resident-search { height: 44px; }
+  .resident-search input { font-size: 16px; } /* Prevent Safari's focus-to-zoom. */
+  .residents-list { min-height: 0; overscroll-behavior: contain; }
+  .resident-row { min-height: 54px; }
+  .resident-row strong { font-size: 12px; }
+  .resident-row small { font-size: 10px; line-height: 1.4; }
+  .drawer-footer { height: 36px; font-size: 9px; }
+
+  .info-dialog { padding: 30px 24px; max-height: calc(100dvh - max(16px, env(safe-area-inset-top)) - max(16px, env(safe-area-inset-bottom))); }
+  .dialog-close { height: 44px; width: 44px; top: 5px; right: 5px; }
+  .info-dialog h2 { font-size: 34px; line-height: 1.15; overflow-wrap: break-word; }
+  .info-dialog p { font-size: 12px; }
+  .keyboard-help { display: none; }
+  .toast {
+    position: absolute; inset: auto; bottom: calc(max(12px, var(--safe-bottom)) + 68px);
+    left: 50%; transform: translateX(-50%); font-size: 10px;
+    max-width: calc(100% - 32px); white-space: normal; text-align: left;
+    padding: 11px 14px; line-height: 1.5; width: max-content; border-radius: 10px;
+  }
+  [data-tooltip]::after { display: none; }
+  .world-loading { background: transparent; padding: 10px; gap: 10px; }
+  .world-loading.has-error { padding: 12px; overflow-y: auto; justify-content: safe center; }
+  .has-error h2 { font-size: 23px; }
+  .has-error p { font-size: 11px; margin: 0; }
+}
+
+@media (max-width: 360px) {
+  .neighborhood-stats .mini-live { display: none; }
+}
+
+/* A landscape phone is not a short desktop. Keep copy/tools left, city right. */
+@media (min-width: 540px) and (max-width: 1000px) and (max-height: 500px) {
+  .app-shell {
+    grid-template-columns: minmax(140px, 180px) 48px minmax(0, 1fr);
+    grid-template-rows: 44px auto 44px 44px minmax(0, 1fr) 56px;
+    grid-template-areas:
+      'header header header'
+      'intro intro world'
+      'time time world'
+      'tools tools world'
+      'info tour world'
+      'dock dock dock';
+    gap: 6px 8px;
+    padding-top: max(8px, var(--safe-top));
+    padding-bottom: max(8px, var(--safe-bottom));
+  }
+  .intro h1 { font-size: 18px; line-height: 1.2; letter-spacing: -0.6px; }
+  .time-options { height: 44px; }
+  .time-button { height: 36px; font-size: 10px; gap: 3px; }
+  .time-button svg { width: 14px; height: 14px; }
+  .scene-tools { gap: 1px; padding: 0 1px; }
+  .tool-stack .icon-button { width: 38px; }
+  .neighborhood-card { align-self: center; padding: 6px; height: 48px; grid-template-columns: 26px minmax(0, 1fr); column-gap: 6px; }
+  .neighborhood-illustration, .neighborhood-illustration > svg { width: 26px; height: 26px; }
+  .neighborhood-main h2 { font-size: 12px; }
+  .neighborhood-stats { font-size: 7px; gap: 4px; }
+  .neighborhood-stats .mini-live { display: none; }
+  .tour-button { height: 48px; }
+  .playback-dock { height: 56px; }
+  .scene-hint { display: none; }
+  .selection-card, .tour-card {
+    grid-column: 1 / 3; grid-row: 2 / 6; max-height: 100%; align-self: stretch;
+  }
+  .residents-drawer { top: calc(max(8px, var(--safe-top)) + 50px); bottom: max(8px, var(--safe-bottom)); }
+  .app-shell:is([data-panel='selection'], [data-panel='tour']) :is(.intro, .time-panel, .scene-tools, .labels-toggle, .neighborhood-card, .tour-button) { visibility: hidden; }
+}
+
+@media (max-height: 700px) and (max-width: 760px) {
+  .scene-hint { display: none; }
+  .drawer-description { display: none; }
+  .drawer-heading h2 { font-size: 26px; margin-top: 7px; }
+  .residents-drawer { padding-top: 15px; }
+  .resident-search { margin-top: 12px; }
+  .drawer-footer { height: 28px; }
+}

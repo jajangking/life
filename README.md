@@ -71,11 +71,12 @@ npm run test:server
 npm run test:deploy
 ```
 
-Enam pengujian browser memeriksa render WebGL, kontrol simulasi, pencarian / mengikuti warga, tur, bantuan, unduh foto, tata letak mobile, dan fallback WebGL. Untuk browser Chromium yang sudah tersedia, set `CHROMIUM_PATH` ke executable tersebut. Pengujian memakai SwiftShader agar WebGL juga bisa berjalan tanpa GPU fisik.
+Pengujian browser memeriksa render WebGL, kontrol simulasi, pencarian / mengikuti warga, tur, bantuan, unduh foto, tata letak mobile, dan fallback WebGL. Suite mobile memakai emulasi sentuh pada layar 320×568 sampai 430×932, landscape 568×320 sampai 932×430, perubahan tinggi browser, safe area, dan teks yang diperbesar. Batas judul, kanvas, dan kontrol diperiksa agar tidak bertumpuk; panel cerita/tur serta pencarian saat keyboard terbuka juga diuji. Untuk browser Chromium yang sudah tersedia, set `CHROMIUM_PATH` ke executable tersebut. Pengujian memakai SwiftShader agar WebGL juga bisa berjalan tanpa GPU fisik.
 
 ## Struktur
 
 - `src/main.js` — antarmuka, pilihan suasana, cerita, tur, dan interaksi.
+- `src/mobile.css` — grid HP portrait/landscape, safe area, kontrol sentuh, dan panel cerita.
 - `src/city.js` — renderer, kamera, pencahayaan, pemilihan objek, dan loop simulasi.
 - `src/world/kit.js` — primitif, material cache, tekstur papan nama, dan static geometry batching.
 - `src/world/buildings.js` — bangunan dan taman dengan detail individual.

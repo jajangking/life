@@ -101,14 +101,25 @@ export async function createCity(container, callbacks = {}) {
   const proj = new THREE.Vector3();
   const v = new THREE.Vector3();
 
+  let bottomOcclusion = 0;
+  const updateViewFrame = () => {
+    const w = container.clientWidth, h = container.clientHeight;
+    if (!w || !h) return;
+    // Move the focus into the visible part above a bottom sheet, without panning
+    // the target (which would break following a resident and picking objects).
+    const offset = Math.min(bottomOcclusion, h * 0.85) / 2;
+    if (offset > 0) camera.setViewOffset(w, h, 0, offset, w, h); else camera.clearViewOffset();
+    camera.updateProjectionMatrix();
+  };
   const resize = () => {
     const w = container.clientWidth, h = container.clientHeight;
     if (!w || !h) return;
     const aspect = w / h;
-    const size = Math.max(43, 51 / aspect);
+    const compact = window.matchMedia('(max-width: 760px), (max-width: 1000px) and (max-height: 500px)').matches;
+    const size = Math.max(compact ? 34 : 43, 51 / aspect);
     camera.left = -size * aspect / 2; camera.right = size * aspect / 2;
     camera.top = size / 2; camera.bottom = -size / 2;
-    camera.updateProjectionMatrix(); renderer.setSize(w, h);
+    updateViewFrame(); renderer.setSize(w, h);
   };
   const observer = new ResizeObserver(resize); observer.observe(container); resize();
 
@@ -226,6 +237,10 @@ export async function createCity(container, callbacks = {}) {
 
   return {
     places, agents: people.agents, stats,
+    setBottomOcclusion(pixels) {
+      if (Math.abs(bottomOcclusion - pixels) < 0.5) return;
+      bottomOcclusion = Math.max(0, pixels); updateViewFrame();
+    },
     setPeriod(value) {
       if (!periods[value]) return;
       period = value; periodTime = 0;
@@ -259,7 +274,7 @@ export async function createCity(container, callbacks = {}) {
       const link = document.createElement('a'); link.download = `kota-kecil-${period}.png`;
       link.href = renderer.domElement.toDataURL('image/png'); link.click();
     },
-    getState() { return { time, running, speed, period, following: following?.id ?? null, zoom: camera.zoom, residents: people.agents.length, places: places.length, drawCalls: renderer.info.render.calls, triangles: renderer.info.render.triangles }; },
+    getState() { return { time, running, speed, period, following: following?.id ?? null, bottomOcclusion, selectedScreen: selected ? screenPosition(selected.item.position) : null, zoom: camera.zoom, residents: people.agents.length, places: places.length, drawCalls: renderer.info.render.calls, triangles: renderer.info.render.triangles }; },
     dispose() { disposed = true; observer.disconnect(); controls.dispose(); renderer.setAnimationLoop(null); renderer.dispose(); },
     screenPosition,
   };

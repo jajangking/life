@@ -5,6 +5,7 @@ import '@fontsource/dm-sans/700.css';
 import '@fontsource/fraunces/400.css';
 import '@fontsource/fraunces/400-italic.css';
 import './styles.css';
+import './mobile.css';
 import { icon, logo } from './icons.js';
 import { createCity, periods } from './city.js';
 import { createAmbience } from './ambience.js';
@@ -14,7 +15,7 @@ const $$ = (selector) => [...document.querySelectorAll(selector)];
 const tool = (id, name, label, extra = '') => `<button class="icon-button" id="${id}" aria-label="${label}" data-tooltip="${label}" ${extra}>${icon(name)}</button>`;
 
 $('#app').innerHTML = `
-<div class="app-shell is-loading" data-period="sore">
+<div class="app-shell is-loading" data-period="sore" data-panel="none">
   <main id="world" class="world">
     <div class="annotation-layer" id="annotations" aria-label="Tempat di kampung">
       <button class="place-label" data-place="kopi"><span class="label-icon coffee-label">${icon('coffee', 13)}</span>Kopi Pagi<span class="label-dot"></span></button>
@@ -27,7 +28,7 @@ $('#app').innerHTML = `
     <a class="brand" href="#" aria-label="Kota Kecil — kembali ke tampilan awal">${logo}<span>kota kecil<span class="brand-dot">.</span></span><span class="brand-divider"></span><span class="brand-caption">a little world,<br>always alive.</span></a>
     <nav class="top-nav" aria-label="Navigasi utama">
       <button class="nav-button is-active" id="nav-explore" aria-current="page">${icon('explore', 16)}<span>Jelajahi</span></button>
-      <button class="nav-button" id="nav-people">${icon('people', 16)}<span>Cerita warga</span></button>
+      <button class="nav-button" id="nav-people" aria-expanded="false" aria-controls="residents">${icon('people', 16)}<span>Cerita warga</span></button>
       <button class="nav-button" id="nav-about">${icon('info', 16)}<span>Tentang</span></button>
     </nav>
     <div class="header-right"><div class="weather">${icon('sun', 20)}<span id="temperature">27°</span><span class="weather-text">Cerah</span></div><span class="header-separator"></span>${tool('sound', 'mute', 'Nyalakan suara kota', 'aria-pressed="false"')}${tool('help', 'help', 'Panduan menjelajahi kota')}</div>
@@ -36,7 +37,7 @@ $('#app').innerHTML = `
   <aside class="sidebar" aria-label="Kampung Mentari">
     <div class="intro">
       <div class="eyebrow"><span></span> BERHENTI SEBENTAR DI SINI</div>
-      <h1>Dunia kecil.<br>Cerita <em>besar.</em></h1>
+      <h1>Dunia kecil.<br> Cerita <em>besar.</em></h1>
       <p>Di antara atap dan pepohonan,<br>selalu ada kehidupan yang menarik<br>untuk dilihat lebih dekat.</p>
     </div>
     <button class="neighborhood-card" id="neighborhood" aria-label="Kenali Kampung Mentari">
@@ -100,6 +101,30 @@ let tourIndex = -1, toastTimer, clockText = '';
 const shell = $('.app-shell');
 const ambience = createAmbience();
 const markerButtons = $$('.place-label');
+const compactLayout = window.matchMedia('(max-width: 760px), (max-width: 1000px) and (max-height: 500px)');
+
+function updatePanelLayout() {
+  const residentsOpen = !$('#residents').hidden;
+  const panel = residentsOpen ? 'residents' : !$('#tour-card').hidden ? 'tour' : !$('#selection').hidden ? 'selection' : 'none';
+  shell.dataset.panel = panel;
+  $('#nav-people').setAttribute('aria-expanded', String(residentsOpen));
+  // The full-width phone drawer must not leave hidden controls in the tab order.
+  $$('.time-panel, #world, .scene-tools, #labels, #neighborhood, #tour-start, .playback-dock').forEach((element) => {
+    element.inert = residentsOpen && compactLayout.matches;
+  });
+  let occluded = 0;
+  if (compactLayout.matches && (panel === 'tour' || panel === 'selection')) {
+    const world = $('#world').getBoundingClientRect();
+    const sheet = $(panel === 'tour' ? '#tour-card' : '#selection').getBoundingClientRect();
+    if (sheet.left < world.right && sheet.right > world.left) {
+      occluded = Math.max(0, Math.min(world.height, world.bottom - sheet.top));
+    }
+  }
+  city?.setBottomOcclusion(occluded);
+}
+const panelObserver = new ResizeObserver(updatePanelLayout);
+['#world', '#selection', '#tour-card', '#residents'].forEach((selector) => panelObserver.observe($(selector)));
+compactLayout.addEventListener('change', updatePanelLayout);
 const tours = [
   { id: 'kopi', title: 'Kopi hangat. Waktu yang lapang.', text: 'Intip teras Kopi Pagi. Ada cangkir di meja, tanaman di balkon, dan cerita yang belum selesai.', icon: 'coffee' },
   { id: 'taman', title: 'Ruang kecil untuk bernapas.', text: 'Air mengalir, ayunan bergerak pelan. Kadang, hal terbaik yang bisa dilakukan adalah duduk sebentar.', icon: 'leaf' },
@@ -120,7 +145,7 @@ function setNav(active) {
     if (b.id === active) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current');
   });
 }
-function closeResidents() { $('#residents').hidden = true; setNav('nav-explore'); }
+function closeResidents() { $('#residents').hidden = true; setNav('nav-explore'); updatePanelLayout(); }
 function openDialog(content) {
   $('#dialog-content').innerHTML = content;
   $('#info-dialog').showModal();
@@ -144,14 +169,16 @@ function showSelection(type, item) {
   closeResidents();
   const isPerson = type === 'person';
   const card = $('#selection');
-  card.innerHTML = `<button class="selection-close icon-button" aria-label="Tutup cerita">${icon('close', 17)}</button><div class="selection-overline">${isPerson ? 'KENALI TETANGGAMU' : 'CERITA DARI SUDUT KOTA'}</div><div class="selection-title"><span class="resident-avatar" style="--avatar-color:${item.color}">${icon(isPerson ? 'person' : item.id === 'kopi' ? 'coffee' : item.id === 'taman' ? 'leaf' : 'house', 25)}</span><div><h2>${item.name}</h2><span>${isPerson ? item.job : item.kind}</span></div></div><p>${isPerson ? item.story : item.description}</p>${isPerson ? `<div class="person-activity"><i></i>${item.activity}</div>` : `<div class="place-facts">${item.facts.map((f) => `<span>${f}</span>`).join('')}</div>`}<button class="selection-action" id="selection-action">${icon(isPerson ? 'person' : 'explore', 16)}<span>${isPerson ? `Ikuti ${item.name}` : 'Lihat lebih dekat'}</span>${icon('arrow', 16)}</button>`;
+  card.innerHTML = `<button class="selection-close icon-button" aria-label="Tutup cerita">${icon('close', 17)}</button><div class="selection-content"><div class="selection-overline">${isPerson ? 'KENALI TETANGGAMU' : 'CERITA DARI SUDUT KOTA'}</div><div class="selection-title"><span class="resident-avatar" style="--avatar-color:${item.color}">${icon(isPerson ? 'person' : item.id === 'kopi' ? 'coffee' : item.id === 'taman' ? 'leaf' : 'house', 25)}</span><div><h2>${item.name}</h2><span>${isPerson ? item.job : item.kind}</span></div></div><p>${isPerson ? item.story : item.description}</p>${isPerson ? `<div class="person-activity"><i></i>${item.activity}</div>` : `<div class="place-facts">${item.facts.map((f) => `<span>${f}</span>`).join('')}</div>`}</div><button class="selection-action" id="selection-action">${icon(isPerson ? 'person' : 'explore', 16)}<span>${isPerson ? `Ikuti ${item.name}` : 'Lihat lebih dekat'}</span>${icon('arrow', 16)}</button>`;
   card.hidden = false;
+  updatePanelLayout();
+  $('#selection-action').focus({ preventScroll: true });
   $('.selection-close').addEventListener('click', closeSelection);
   $('#selection-action').addEventListener('click', () => {
     if (isPerson) city.follow(item.id); else { city.selectPlace(item.id); toast(`Sekarang lebih dekat dengan ${item.name}.`); }
   });
 }
-function closeSelection() { $('#selection').hidden = true; selectedItem = null; city?.deselect(); }
+function closeSelection() { $('#selection').hidden = true; selectedItem = null; city?.deselect(); updatePanelLayout(); }
 function updateFollow(value) {
   following = value;
   if (selectedItem?.type !== 'person' || !$('#selection-action')) return;
@@ -162,7 +189,7 @@ function updateFollow(value) {
 
 function renderTour() {
   const t = tours[tourIndex];
-  $('#tour-card').innerHTML = `<div class="tour-progress">${tours.map((_, i) => `<span class="${i <= tourIndex ? 'is-complete' : ''}"></span>`).join('')}</div><button id="tour-close" class="icon-button" aria-label="Akhiri jalan-jalan">${icon('close', 16)}</button><div class="tour-step">${icon(t.icon, 15)} JALAN-JALAN DI MENTARI <span>0${tourIndex + 1} / 04</span></div><h2>${t.title}</h2><p>${t.text}</p><button class="tour-next" id="tour-next">${tourIndex === tours.length - 1 ? 'Kembali menikmati kota' : 'Ke sudut berikutnya'}${icon('arrow', 17)}</button>`;
+  $('#tour-card').innerHTML = `<div class="tour-progress">${tours.map((_, i) => `<span class="${i <= tourIndex ? 'is-complete' : ''}"></span>`).join('')}</div><button id="tour-close" class="icon-button" aria-label="Akhiri jalan-jalan">${icon('close', 16)}</button><div class="tour-body"><div class="tour-step">${icon(t.icon, 15)} JALAN-JALAN DI MENTARI <span>0${tourIndex + 1} / 04</span></div><h2>${t.title}</h2><p>${t.text}</p></div><button class="tour-next" id="tour-next">${tourIndex === tours.length - 1 ? 'Kembali menikmati kota' : 'Ke sudut berikutnya'}${icon('arrow', 17)}</button>`;
   $('#tour-card').hidden = false;
   $('#tour-close').addEventListener('click', () => endTour());
   $('#tour-next').addEventListener('click', () => {
@@ -170,6 +197,8 @@ function renderTour() {
   });
   city.selectPlace(t.id, true);
   $('#selection').hidden = true;
+  updatePanelLayout();
+  $('#tour-next').focus({ preventScroll: true });
 }
 function startTour() { closeResidents(); closeSelection(); tourIndex = 0; renderTour(); }
 function endTour(reset = true) {
@@ -205,12 +234,12 @@ $('#nav-explore').addEventListener('click', () => { closeResidents(); endTour(fa
 $('#nav-people').addEventListener('click', () => {
   if (!city) return;
   if (!$('#residents').hidden) return closeResidents();
-  endTour(false); closeSelection(); $('#residents').hidden = false; setNav('nav-people'); $('#resident-search').value = ''; renderResidents();
+  endTour(false); closeSelection(); $('#residents').hidden = false; setNav('nav-people'); $('#resident-search').value = ''; renderResidents(); updatePanelLayout(); $('#residents-close').focus({ preventScroll: true });
 });
 $('#nav-about').addEventListener('click', about);
 $('#neighborhood').addEventListener('click', about);
 $('#help').addEventListener('click', help);
-$('#residents-close').addEventListener('click', closeResidents);
+$('#residents-close').addEventListener('click', () => { closeResidents(); $('#nav-people').focus({ preventScroll: true }); });
 $('#resident-search').addEventListener('input', (e) => { if (city) renderResidents(e.target.value); });
 $('.dialog-close').addEventListener('click', () => $('#info-dialog').close());
 $('#info-dialog').addEventListener('click', (e) => { if (e.target === $('#info-dialog')) { const r = e.target.getBoundingClientRect(); if (e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom) e.target.close(); } });
@@ -287,6 +316,7 @@ async function init() {
     });
     $('#resident-count').textContent = city.agents.length;
     $('#place-count').textContent = city.places.length;
+    updatePanelLayout();
     shell.classList.remove('is-loading');
     $('#loading').hidden = true;
     // A small read-only inspection hook is useful for smoke tests and diagnostics.
@@ -300,4 +330,4 @@ async function init() {
 }
 init();
 
-if (import.meta.hot) import.meta.hot.dispose(() => { city?.dispose(); ambience.dispose(); });
+if (import.meta.hot) import.meta.hot.dispose(() => { panelObserver.disconnect(); compactLayout.removeEventListener('change', updatePanelLayout); city?.dispose(); ambience.dispose(); });
